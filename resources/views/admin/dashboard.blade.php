@@ -124,29 +124,63 @@
             </div>
 
             <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
-                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Articles</h2>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Artikel Menunggu Verifikasi</h2>
+                @php
+                    $pendingArticles = \App\Models\Article::where('status', 'pending')->with('user')->latest()->take(5)->get();
+                @endphp
+                @if ($pendingArticles->isEmpty())
+                    <p class="text-gray-500 dark:text-gray-400">Tidak ada artikel yang menunggu verifikasi.</p>
+                @else
+                    <div class="space-y-3">
+                        @foreach ($pendingArticles as $article)
+                            <div class="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-sm font-medium text-gray-900 dark:text-white truncate block">
+                                        {{ $article->title }}
+                                    </span>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                        oleh {{ $article->user->name }}
+                                    </p>
+                                </div>
+                                <a href="{{ route('admin.verify') }}" class="ml-4 px-3 py-1 bg-yellow-500 text-white text-xs font-bold rounded hover:bg-yellow-600 transition">
+                                    Tinjau
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="grid gap-6 mb-8">
+            <div class="bg-white dark:bg-zinc-900 rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Artikel Terbaru</h2>
                 @php
                     $recentArticles = \App\Models\Article::with('user')->latest()->take(5)->get();
                 @endphp
                 @if ($recentArticles->isEmpty())
-                    <p class="text-gray-500 dark:text-gray-400">No articles yet.</p>
+                    <p class="text-gray-500 dark:text-gray-400">Belum ada artikel.</p>
                 @else
                     <div class="space-y-3">
                         @foreach ($recentArticles as $article)
                             <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">
                                 <div class="flex-1 min-w-0">
-                                    <a href="{{ route('admin.articles.edit', $article->id) }}"
-                                        class="text-sm font-medium text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 truncate block">
+                                    <span class="text-sm font-medium text-gray-900 dark:text-white truncate block">
                                         {{ $article->title }}
-                                    </a>
+                                    </span>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                                        by {{ $article->user->name }} • {{ $article->created_at->format('M d, Y') }}
+                                        oleh {{ $article->user->name }} • {{ $article->created_at->format('M d, Y') }}
                                     </p>
                                 </div>
-                                <span
-                                    class="inline-flex items-center px-2 py-1 rounded text-xs font-medium {{ $article->status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' }}">
-                                    {{ $article->status }}
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded text-xs font-medium {{ $article->status === 'published' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : ($article->status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300') }}">
+                                        {{ $article->status }}
+                                    </span>
+                                    @if($article->status === 'pending')
+                                        <a href="{{ route('admin.verify') }}" class="text-blue-600 hover:text-blue-800 text-xs font-bold">Verifikasi →</a>
+                                    @endif
+                                </div>
                             </div>
                         @endforeach
                     </div>

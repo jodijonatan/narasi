@@ -6,48 +6,82 @@
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                <x-app-logo :sidebar="true" href="{{ auth()->check() ? route('dashboard') : route('home') }}" wire:navigate />
                 <flux:sidebar.collapse class="lg:hidden" />
             </flux:sidebar.header>
 
             <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
+                <flux:sidebar.group :heading="__('Utama')" class="grid">
+                    <flux:sidebar.item icon="home" :href="route('home')" :current="request()->routeIs('home')" wire:navigate>
+                        {{ __('Beranda') }}
                     </flux:sidebar.item>
+                    
+                    @auth
+                        <flux:sidebar.item icon="squares-2x2" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                            {{ __('Dashboard') }}
+                        </flux:sidebar.item>
+                    @endauth
                 </flux:sidebar.group>
+
+                @auth
+                    {{-- Admin Section --}}
+                    @if(auth()->user()->isAdmin())
+                        <flux:sidebar.group :heading="__('Manajemen Admin')" class="grid">
+                            <flux:sidebar.item icon="check-circle" :href="route('admin.verify')" :current="request()->routeIs('admin.verify')" wire:navigate>
+                                {{ __('Verifikasi Artikel') }}
+                            </flux:sidebar.item>
+                            <flux:sidebar.item icon="tag" :href="route('admin.categories.index')" :current="request()->routeIs('admin.categories.index')" wire:navigate>
+                                {{ __('Kelola Kategori') }}
+                            </flux:sidebar.item>
+                            <flux:sidebar.item icon="users" :href="route('admin.users.index')" :current="request()->routeIs('admin.users.index')" wire:navigate>
+                                {{ __('Kelola Pengguna') }}
+                            </flux:sidebar.item>
+                        </flux:sidebar.group>
+                    @endif
+
+                    {{-- Writer Section --}}
+                    <flux:sidebar.group :heading="__('Konten Penulis')" class="grid">
+                        <flux:sidebar.item icon="book-open" :href="route('writer.articles')" :current="request()->routeIs('writer.articles')" wire:navigate>
+                            {{ __('Artikel Saya') }}
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
+                @endauth
             </flux:sidebar.nav>
 
             <flux:spacer />
 
-            <flux:sidebar.nav>
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
+            {{-- Guest/Auth Footer --}}
+            @guest
+                <flux:sidebar.nav>
+                    <flux:sidebar.item icon="arrow-right-end-on-rectangle" :href="route('login')" wire:navigate>
+                        {{ __('Masuk') }}
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="user-plus" :href="route('register')" wire:navigate>
+                        {{ __('Daftar') }}
+                    </flux:sidebar.item>
+                </flux:sidebar.nav>
+            @endguest
 
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
-                </flux:sidebar.item>
-            </flux:sidebar.nav>
-
-            <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
+            @auth
+                <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
+            @endauth
         </flux:sidebar>
 
 
-        <!-- Mobile User Menu -->
+        {{-- Mobile Header --}}
         <flux:header class="lg:hidden">
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <flux:spacer />
 
-            <flux:dropdown position="top" align="end">
-                <flux:profile
-                    :initials="auth()->user()->initials()"
-                    icon-trailing="chevron-down"
-                />
+            @auth
+                <flux:dropdown position="top" align="end">
+                    <flux:profile
+                        :initials="auth()->user()->initials()"
+                        icon-trailing="chevron-down"
+                    />
 
-                <flux:menu>
-                    <flux:menu.radio.group>
+                    <flux:menu>
                         <div class="p-0 text-sm font-normal">
                             <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
                                 <flux:avatar
@@ -61,34 +95,36 @@
                                 </div>
                             </div>
                         </div>
-                    </flux:menu.radio.group>
 
-                    <flux:menu.separator />
+                        <flux:menu.separator />
 
-                    <flux:menu.radio.group>
                         <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
                             {{ __('Settings') }}
                         </flux:menu.item>
-                    </flux:menu.radio.group>
 
-                    <flux:menu.separator />
+                        <flux:menu.separator />
 
-                    <form method="POST" action="{{ route('logout') }}" class="w-full">
-                        @csrf
-                        <flux:menu.item
-                            as="button"
-                            type="submit"
-                            icon="arrow-right-start-on-rectangle"
-                            class="w-full cursor-pointer"
-                            data-test="logout-button"
-                        >
-                            {{ __('Log Out') }}
-                        </flux:menu.item>
-                    </form>
-                </flux:menu>
-            </flux:dropdown>
+                        <form method="POST" action="{{ route('logout') }}" class="w-full">
+                            @csrf
+                            <flux:menu.item
+                                as="button"
+                                type="submit"
+                                icon="arrow-right-start-on-rectangle"
+                                class="w-full cursor-pointer"
+                            >
+                                {{ __('Log Out') }}
+                            </flux:menu.item>
+                        </form>
+                    </flux:menu>
+                </flux:dropdown>
+            @endauth
+
+            @guest
+                <flux:button :href="route('login')" variant="ghost" size="sm" wire:navigate>{{ __('Masuk') }}</flux:button>
+            @endguest
         </flux:header>
 
+        {{-- Main Content --}}
         {{ $slot }}
 
         @fluxScripts
