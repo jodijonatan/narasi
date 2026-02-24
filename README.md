@@ -68,8 +68,8 @@ A modern, full-featured Content Management System (CMS) built with Laravel 12, L
 
 ```
 bash
-git clone https://github.com/jodijonatan/Narasi.git
-cd Narasi
+git clone https://github.com/jodijonatan/narasi.git
+cd narasi
 ```
 
 2. **Install PHP Dependencies**
