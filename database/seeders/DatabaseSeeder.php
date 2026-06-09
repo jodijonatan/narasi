@@ -27,9 +27,10 @@ class DatabaseSeeder extends Seeder
             'role' => 'user',
         ]);
 
-        // Seed categories
+        // Seed categories and articles
         $this->call([
             CategorySeeder::class,
+            ArticleSeeder::class,
         ]);
     }
 }

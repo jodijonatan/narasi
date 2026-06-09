@@ -1,76 +1,165 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         @include('partials.head')
+        <style>
+            .reading-progress-bar {
+                height: 3px;
+                background: #111827;
+                width: 0%;
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 100;
+                transition: width 0.1s ease;
+            }
+            body {
+                font-family: 'Instrument Sans', sans-serif;
+            }
+        </style>
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:header container class="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden mr-2" icon="bars-2" inset="left" />
+    <body class="min-h-screen bg-white text-[#111827] antialiased flex flex-col">
+        <!-- Reading Progress Bar (visible on detail pages) -->
+        <div id="readingProgress" class="reading-progress-bar"></div>
 
-            <x-app-logo href="{{ route('home') }}" wire:navigate />
+        <!-- Sticky Header (Transparent layout backdrop) -->
+        <header class="sticky top-0 z-50 backdrop-blur-lg bg-white/80 border-b border-zinc-100 transition-all duration-300">
+            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16 sm:h-20">
+                    <!-- Left: Brand Logo & Categories -->
+                    <div class="flex items-center gap-10">
+                        <a href="{{ route('home') }}" class="flex items-center gap-2 group" wire:navigate>
+                            <span class="text-2xl font-black tracking-tighter text-[#111827] transition duration-200">
+                                Narasi
+                            </span>
+                        </a>
 
-            <flux:navbar class="-mb-px max-lg:hidden">
-                <flux:navbar.item icon="home" :href="route('home')" :current="request()->routeIs('home')" wire:navigate>
-                    {{ __('Beranda') }}
-                </flux:navbar.item>
-                @auth
-                    <flux:navbar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </flux:navbar.item>
-                @endauth
-            </flux:navbar>
+                        @php
+                            $navCategories = \App\Models\Category::withCount('publishedArticles')
+                                ->orderBy('published_articles_count', 'desc')
+                                ->take(5)
+                                ->get();
+                        @endphp
+                        <nav class="hidden lg:flex items-center gap-8 text-xs font-bold uppercase tracking-wider text-zinc-500">
+                            @foreach($navCategories as $cat)
+                                <a href="{{ route('home') }}?category={{ $cat->slug }}" class="hover:text-[#111827] transition-colors duration-150" wire:navigate>
+                                    {{ $cat->name }}
+                                </a>
+                            @endforeach
+                        </nav>
+                    </div>
 
-            <flux:spacer />
+                    <!-- Right: Search & Actions -->
+                    <div class="flex items-center gap-6">
+                        @guest
+                            <div class="flex items-center gap-4">
+                                <a href="{{ route('login') }}" class="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-[#111827] transition-colors" wire:navigate>
+                                    Masuk
+                                </a>
+                                <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#111827] hover:bg-[#374151] rounded-xs transition duration-150" wire:navigate>
+                                    Daftar
+                                </a>
+                            </div>
+                        @endguest
 
-            <flux:navbar class="me-1.5 space-x-0.5 rtl:space-x-reverse py-0!">
-                @guest
-                    <flux:navbar.item icon="log-in" :href="route('login')" wire:navigate>{{ __('Masuk') }}</flux:navbar.item>
-                    <flux:navbar.item icon="user-plus" :href="route('register')" wire:navigate>{{ __('Daftar') }}</flux:navbar.item>
-                @endguest
-            </flux:navbar>
+                        @auth
+                            <div class="flex items-center gap-6">
+                                <a href="{{ route('dashboard') }}" class="text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-[#111827] transition-colors" wire:navigate>
+                                    Dashboard
+                                </a>
+                                <x-desktop-user-menu />
+                            </div>
+                        @endauth
+                    </div>
+                </div>
+            </div>
+        </header>
 
-            @auth
-                <x-desktop-user-menu />
-            @endauth
-        </flux:header>
+        <!-- Main Content Area -->
+        <main class="flex-grow">
+            {{ $slot }}
+        </main>
 
-        <!-- Mobile Sidebar Fallback -->
-        <flux:sidebar collapsible="mobile" sticky class="lg:hidden border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('home') }}" wire:navigate />
-                <flux:sidebar.collapse class="in-data-flux-sidebar-on-desktop:not-in-data-flux-sidebar-collapsed-desktop:-mr-2" />
-            </flux:sidebar.header>
+        <!-- Footer Section -->
+        <footer class="bg-white text-zinc-500 border-t border-zinc-100 pt-16 pb-8">
+            <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+                    <!-- Brand Column -->
+                    <div class="space-y-4">
+                        <span class="text-xl font-black tracking-tighter text-[#111827]">
+                            Narasi
+                        </span>
+                        <p class="text-xs leading-relaxed text-zinc-400">
+                            Platform jurnalisme modern tempat cerita, ide, dan wawasan segar mengalir tanpa batas untuk menginspirasi dunia.
+                        </p>
+                    </div>
 
-            <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')">
-                    <flux:sidebar.item icon="home" :href="route('home')" :current="request()->routeIs('home')" wire:navigate>
-                        {{ __('Beranda')  }}
-                    </flux:sidebar.item>
-                    @auth
-                        <flux:sidebar.item icon="layout-grid" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                            {{ __('Dashboard')  }}
-                        </flux:sidebar.item>
-                    @endauth
-                </flux:sidebar.group>
+                    <!-- Categories Column -->
+                    <div>
+                        <h4 class="text-xs font-bold text-[#111827] uppercase tracking-wider mb-4">Kategori Populer</h4>
+                        <ul class="space-y-2.5 text-xs">
+                            @foreach($navCategories as $cat)
+                                <li>
+                                    <a href="{{ route('home') }}?category={{ $cat->slug }}" class="hover:text-[#111827] transition" wire:navigate>
+                                        {{ $cat->name }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
 
-                @auth
-                    @if(auth()->user()->isAdmin())
-                        <flux:sidebar.group :heading="__('Admin')">
-                            <flux:sidebar.item icon="check-circle" :href="route('admin.verify')" wire:navigate>{{ __('Verifikasi') }}</flux:sidebar.item>
-                            <flux:sidebar.item icon="tag" :href="route('admin.categories.index')" wire:navigate>{{ __('Kategori') }}</flux:sidebar.item>
-                            <flux:sidebar.item icon="users" :href="route('admin.users.index')" wire:navigate>{{ __('Pengguna') }}</flux:sidebar.item>
-                        </flux:sidebar.group>
-                    @endif
+                    <!-- Quick Links -->
+                    <div>
+                        <h4 class="text-xs font-bold text-[#111827] uppercase tracking-wider mb-4">Navigasi</h4>
+                        <ul class="space-y-2.5 text-xs">
+                            <li><a href="{{ route('home') }}" class="hover:text-[#111827] transition" wire:navigate>Beranda</a></li>
+                            @guest
+                                <li><a href="{{ route('login') }}" class="hover:text-[#111827] transition" wire:navigate>Masuk</a></li>
+                                <li><a href="{{ route('register') }}" class="hover:text-[#111827] transition" wire:navigate>Daftar</a></li>
+                            @endguest
+                            @auth
+                                <li><a href="{{ route('dashboard') }}" class="hover:text-[#111827] transition" wire:navigate>Dashboard Penulis</a></li>
+                            @endauth
+                        </ul>
+                    </div>
 
-                    <flux:sidebar.group :heading="__('Penulis')">
-                        <flux:sidebar.item icon="book-open" :href="route('writer.articles')" wire:navigate>{{ __('Artikel Saya') }}</flux:sidebar.item>
-                    </flux:sidebar.group>
-                @endauth
-            </flux:sidebar.nav>
-        </flux:sidebar>
+                    <!-- Newsletter Info -->
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-bold text-[#111827] uppercase tracking-wider">Newsletter Narasi</h4>
+                        <p class="text-xs text-zinc-400">Dapatkan artikel pilihan langsung ke email Anda setiap minggu.</p>
+                        <form onsubmit="event.preventDefault(); alert('Terima kasih telah berlangganan!');" class="flex gap-2">
+                            <input type="email" placeholder="Alamat email Anda" required class="flex-grow bg-zinc-50 border border-zinc-200/60 rounded-xs px-3 py-2 text-xs focus:outline-hidden text-[#111827] placeholder-zinc-400">
+                            <button type="submit" class="bg-[#111827] hover:bg-[#374151] text-white font-bold text-xs px-4 py-2 rounded-xs transition">
+                                Ikuti
+                            </button>
+                        </form>
+                    </div>
+                </div>
 
-        {{ $slot }}
+                <!-- Footer Bottom -->
+                <div class="border-t border-zinc-100 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-400">
+                    <p>© {{ date('Y') }} Narasi. Hak cipta dilindungi undang-undang.</p>
+                    <div class="flex gap-6">
+                        <a href="#" class="hover:text-[#111827] transition">Kebijakan Privasi</a>
+                        <a href="#" class="hover:text-[#111827] transition">Syarat & Ketentuan</a>
+                        <a href="#" class="hover:text-[#111827] transition">Kontak</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
 
         @fluxScripts
+        <!-- Reading Progress Script -->
+        <script>
+            window.addEventListener('scroll', () => {
+                const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+                const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+                const scrolled = (winScroll / height) * 100;
+                const progressBar = document.getElementById('readingProgress');
+                if (progressBar) {
+                    progressBar.style.width = scrolled + '%';
+                }
+            });
+        </script>
     </body>
 </html>
